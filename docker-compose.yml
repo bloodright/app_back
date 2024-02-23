@@ -1,0 +1,48 @@
+version: "3.9"
+services:
+    db:
+        image: postgis/postgis:16-3.4-alpine
+        restart: unless-stopped
+        container_name: music-db
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_DB: ${DB_DATABASE}
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            - ./storage/docker/_db:/var/lib/postgresql/data
+        networks:
+            - music-db-network
+
+    app:
+        build:
+            context: ./
+            dockerfile: ./docker/php/DockerFile
+        container_name: music-app
+        user: ${UID}:${GID}
+        restart: unless-stopped
+        volumes:
+            - ./:/var/www
+            - ./docker/php/extend-php.ini:/usr/local/etc/php/conf.d/extend-php.ini
+        depends_on:
+            - db
+        networks:
+            - music-db-network
+            - music-webserver-network
+
+    webserver:
+        image: nginx:1.25.4-alpine
+        restart: unless-stopped
+        volumes:
+            - ./:/var/www
+            - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+            - ./storage/docker/logs/nginx/:/var/log/nginx
+        ports:
+            - "80:80"
+        networks:
+            -  music-webserver-network
+
+networks:
+    music-db-network:
+    music-webserver-network:
