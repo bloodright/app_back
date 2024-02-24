@@ -1,0 +1,68 @@
+version: "3.9"
+services:
+    db:
+        image: postgis/postgis:16-3.4-alpine
+        restart: unless-stopped
+        container_name: mlteam-db
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_DB: ${DB_DATABASE}
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            - ./src/_db:/var/lib/postgresql/data
+        networks:
+            - mlteam-db-network
+
+    app:
+        build:
+            context: ./
+            dockerfile: ./builds/php/DockerFile
+        container_name: mlteam-app
+        user: ${UID}:${GID}
+        restart: unless-stopped
+        volumes:
+            - ../mlteam:/var/www:rw
+            - ./.env:/var/www/.env:ro
+        depends_on:
+            - db
+        # command: ls
+        networks:
+            - mlteam-db-network
+            - mlteam-web-network
+
+    composer:
+        build:
+            context: ./builds/composer
+            dockerfile: composer.dockerFile
+        volumes:
+            - ../mlteam:/var/www
+
+    # artisan:
+    #     build:
+    #         context: dockerfiles
+    #         dockerfile: php.Dockerfile
+    #     volumes:
+    #         - ../mlteam:/var/www
+    # entrypoint: ["php", "/var/www/laravel/artisan"]
+
+    web:
+        image: nginx:stable-alpine
+        restart: unless-stopped
+        container_name: mlteam-web
+        volumes:
+            - ../mlteam/:/var/www
+            - ./builds/nginx/conf.d/:/etc/nginx/conf.d/:ro
+            # - ./docker/nginx/sites-enabled/:/etc/nginx/sites-enabled/
+            # - ./docker/nginx/nginx.conf/:/etc/nginx/nginx.conf
+            - ./src/logs/nginx/:/var/log/nginx
+        ports:
+            - "80:80"
+        depends_on:
+            - app
+        networks:
+            -  mlteam-web-network
+networks:
+    mlteam-db-network:
+    mlteam-web-network:
