@@ -1,0 +1,72 @@
+version: "3.9"
+services:
+    db:
+        image: postgis/postgis:16-3.4-alpine
+        restart: unless-stopped
+        container_name: mlteam-db
+        ports:
+            - "${DB_PORT}:${DB_PORT}"
+        environment:
+            POSTGRES_DB: ${DB_DATABASE}
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            - ./src/_db:/var/lib/postgresql/data
+        networks:
+            - mlteam-db-network
+#
+    app:
+        build:
+            context: ./
+            dockerfile: ./builds/php/DockerFile
+        container_name: mlteam-app
+        user: ${UID}:${GID}
+        restart: unless-stopped
+        volumes:
+            - ../mlteam:/var/www:rw
+            - ./.env:/var/www/.env:ro
+        depends_on:
+            - db
+        networks:
+            - mlteam-db-network
+            - mlteam-web-network
+
+    composer:
+        build:
+            context: ./builds/composer
+            dockerfile: composer.dockerFile
+        depends_on:
+            - app
+        volumes:
+            - ../mlteam:/var/www
+
+    web:
+        image: nginx:stable-alpine
+        restart: unless-stopped
+        container_name: mlteam-web
+        environment:
+            FRONT_PORT: ${FRONT_PORT}
+        volumes:
+            - ../mlteam/:/var/www
+            - ./builds/nginx/conf.d/:/etc/nginx/conf.d/:ro
+            - ./src/logs/nginx/:/var/log/nginx
+        ports:
+            - "${FRONT_PORT}:${FRONT_PORT}"
+        # command: FRONT_PORT=${FRONT_PORT}
+        depends_on:
+            - app
+        networks:
+            -  mlteam-web-network
+
+    # certbot:
+    #     container_name: certbot
+    #     image: certbot/certbot
+    #     ports: "6000:80"
+    #     volumes:
+    #         - ./builds/nginx/:/etc/nginx/
+    #     build: 
+    #         context: ./certbot\
+    #         dockerfile: ./builds/php/DockerFile
+networks:
+    mlteam-db-network:
+    mlteam-web-network:
