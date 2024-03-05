@@ -1,11 +1,11 @@
 version: "3.9"
 services:
     db:
-        image: postgis/postgis:16-3.4-alpine
-        restart: unless-stopped
+        image: postgres:alpine
+        # restart: unless-stopped
         container_name: mlteam-db
         ports:
-            - "5432:5432"
+            - "${DB_PORT}:${DB_PORT}"
         environment:
             POSTGRES_DB: ${DB_DATABASE}
             POSTGRES_USER: ${DB_USERNAME}
@@ -20,7 +20,7 @@ services:
             context: ./
             dockerfile: ./builds/php/DockerFile
         container_name: mlteam-app
-        user: ${UID}:${GID}
+        # user: ${UID}:${GID}
         restart: unless-stopped
         volumes:
             - ../mlteam:/var/www:rw
@@ -49,7 +49,7 @@ services:
             - ./builds/nginx/conf.d/:/etc/nginx/conf.d/:ro
             - ./src/logs/nginx/:/var/log/nginx
         ports:
-            - "80:80"
+            - "${FRONT_PORT}:${FRONT_PORT}"
         depends_on:
             - app
         networks:
