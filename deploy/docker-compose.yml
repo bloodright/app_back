@@ -36,6 +36,7 @@ services:
         build:
             context: ./builds/composer
             dockerfile: composer.dockerFile
+        container_name: mlteam-composer
         depends_on:
             - db
         volumes:
@@ -45,6 +46,7 @@ services:
         build:
             context: ./builds/artisan
             dockerfile: artisan.Dockerfile
+        container_name: mlteam-artisan
         volumes:
         - ../mlteam:/var/www
         entrypoint: ["php", "/var/www/artisan"]
