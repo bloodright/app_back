@@ -5,7 +5,7 @@ services:
         # restart: unless-stopped
         container_name: mlteam-db
         ports:
-            - "${DB_PORT}:${DB_PORT}"
+            - "${DB_PORT}:5432"
         environment:
             POSTGRES_DB: ${DB_DATABASE}
             POSTGRES_USER: ${DB_USERNAME}
@@ -24,9 +24,10 @@ services:
         restart: unless-stopped
         volumes:
             - ../mlteam:/var/www:rw
-            - ./.env:/var/www/.env:ro
+            # - ./.env.prod:/var/www/.env
         depends_on:
-            - db
+            composer:
+                condition: service_completed_successfully
         networks:
             - mlteam-db-network
             - mlteam-web-network
@@ -36,24 +37,36 @@ services:
             context: ./builds/composer
             dockerfile: composer.dockerFile
         depends_on:
-            - app
+            - db
         volumes:
             - ../mlteam:/var/www
 
+    artisan:
+        build:
+            context: ./builds/artisan
+            dockerfile: artisan.Dockerfile
+        volumes:
+        - ../mlteam:/var/www
+        entrypoint: ["php", "/var/www/artisan"]
+        networks:
+            - mlteam-db-network
+
     web:
         image: nginx:stable-alpine
-        restart: unless-stopped
+        # restart: unless-stopped
         container_name: mlteam-web
         volumes:
             - ../mlteam/:/var/www
             - ./builds/nginx/conf.d/:/etc/nginx/conf.d/:ro
             - ./src/logs/nginx/:/var/log/nginx
         ports:
-            - "${FRONT_PORT}:${FRONT_PORT}"
+            - "${FRONT_PORT}:433"
         depends_on:
             - app
         networks:
             -  mlteam-web-network
+
+
 networks:
     mlteam-db-network:
     mlteam-web-network:
