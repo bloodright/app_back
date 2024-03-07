@@ -59,10 +59,10 @@ services:
         container_name: mlteam-web
         volumes:
             - ../mlteam/:/var/www
-            - ./builds/nginx/conf.d/:/etc/nginx/conf.d/:ro
+            - ./builds/nginx/conf.d/:/etc/nginx/conf.d/
             - ./src/logs/nginx/:/var/log/nginx
         ports:
-            - "${FRONT_PORT}:433"
+            - "${FRONT_PORT}:80"
         depends_on:
             - app
         networks:
