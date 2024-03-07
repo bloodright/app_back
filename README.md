@@ -77,5 +77,7 @@
 
 * ### Запускаем проект
     C помощью команды `deploy/docker-compose up --build -d` запускаем docker-compose в фоновом режиме
+* ### Генерируем ключ
+    С помощью команды `deploy/docker-compose run artisan migrate` генерируем ключ приложения
  * ## Миграции
-    Чтоб установить миграции в бд вводим следующую команду `deploy/docker-compose artisan migrate`. Миграции успешно установлены.
+    Чтоб установить миграции в бд вводим следующую команду `deploy/docker-compose run artisan migrate`. Миграции успешно установлены.
