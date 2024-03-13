@@ -1,59 +1,74 @@
 version: "3.9"
 services:
-  db:
-    image: postgres:alpine
-    # restart: unless-stopped
-    container_name: mlteam-db
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: mlteam
-      POSTGRES_USER: mlteam
-      POSTGRES_PASSWORD: mlteam
-    volumes:
-      - ./src/_db:/var/lib/postgresql/data
-    networks:
-      - mlteam-db-network
+    db:
+        image: postgres:alpine
+        # restart: unless-stopped
+        container_name: mlteam-db
+        ports:
+            - "${DB_PORT}:5432"
+        environment:
+            POSTGRES_DB: ${DB_DATABASE}
+            POSTGRES_USER: ${DB_USERNAME}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            - ./src/_db:/var/lib/postgresql/data
+        networks:
+            - mlteam-db-network
 
-  app:
-    build:
-      context: ./
-      dockerfile: ./builds/php/DockerFile
-    container_name: mlteam-app
-    # user: ${UID}:${GID}
-    restart: unless-stopped
-    volumes:
-      - ../mlteam:/var/www:rw
-      - ./.env:/var/www/.env:rw
-    depends_on:
-      - db
-    networks:
-      - mlteam-db-network
-      - mlteam-web-network
+    app:
+        build:
+            context: ./
+            dockerfile: ./builds/php/DockerFile
+        container_name: mlteam-app
+        # user: ${UID}:${GID}
+        restart: unless-stopped
+        volumes:
+            - ../mlteam:/var/www:rw
+            # - ./.env.prod:/var/www/.env
+        depends_on:
+            composer:
+                condition: service_completed_successfully
+        networks:
+            - mlteam-db-network
+            - mlteam-web-network
 
-  composer:
-    build:
-      context: ./builds/composer
-      dockerfile: composer.dockerFile
-    depends_on:
-      - app
-    volumes:
-      - ../mlteam:/var/www
+    composer:
+        build:
+            context: ./builds/composer
+            dockerfile: composer.dockerFile
+        container_name: mlteam-composer
+        depends_on:
+            - db
+        volumes:
+            - ../mlteam:/var/www
 
-  web:
-    image: nginx:stable-alpine
-    restart: unless-stopped
-    container_name: mlteam-web
-    volumes:
-      - ../mlteam/:/var/www
-      - ./builds/nginx/conf.d/:/etc/nginx/conf.d/:ro
-      - ./src/logs/nginx/:/var/log/nginx
-    ports:
-      - "${FRONT_PORT}:${FRONT_PORT}"
-    depends_on:
-      - app
-    networks:
-      - mlteam-web-network
+    artisan:
+        build:
+            context: ./builds/artisan
+            dockerfile: artisan.Dockerfile
+        container_name: mlteam-artisan
+        volumes:
+        - ../mlteam:/var/www
+        entrypoint: ["php", "/var/www/artisan"]
+        networks:
+            - mlteam-db-network
+
+    web:
+        image: nginx:stable-alpine
+        # restart: unless-stopped
+        container_name: mlteam-web
+        volumes:
+            - ../mlteam/:/var/www
+            - ./builds/nginx/conf.d/:/etc/nginx/conf.d/
+            - ./src/logs/nginx/:/var/log/nginx
+        ports:
+            - "${FRONT_PORT}:80"
+        depends_on:
+            - app
+        networks:
+            -  mlteam-web-network
+
+
 networks:
   mlteam-db-network:
   mlteam-web-network:
