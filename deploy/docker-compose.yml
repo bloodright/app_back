@@ -3,9 +3,9 @@ services:
     db:
         image: postgres:alpine
         # restart: unless-stopped
-        container_name: mlteam-db
-        ports:
-            - "${DB_PORT}:5432"
+        container_name: mlteam-db  
+        ports: 
+          - "${DB_PORT}:5432"
         environment:
             POSTGRES_DB: ${DB_DATABASE}
             POSTGRES_USER: ${DB_USERNAME}
