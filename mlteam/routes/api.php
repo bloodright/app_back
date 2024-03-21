@@ -21,6 +21,6 @@ use App\Http\Controllers\Api\AuthController;
 Route::controller(AuthController::class)->group(function() {
     Route::post('register', 'register');
     Route::post('login', 'login');
-    Route::post('logout/{id}', 'logout')->middleware('auth:sanctum');
+    Route::post('logout', 'logout')->middleware('auth:sanctum');
 });
 
